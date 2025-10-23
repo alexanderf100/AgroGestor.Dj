@@ -6,8 +6,8 @@
 #   * Remove `managed = False` lines if you wish to allow Django to create, modify, and delete the table
 # Feel free to rename the models, but don't rename db_table values or field names.
 from django.db import models
-
-
+from django.contrib.auth.models import AbstractUser,BaseUserManager
+import uuid
 
 
 
@@ -31,6 +31,14 @@ class Cultivos(models.Model):
     area_m2 = models.DecimalField(db_column='Area_m2', max_digits=10, decimal_places=2)  # Field name made lowercase.
     estado = models.BooleanField(db_column='Estado')  # Field name made lowercase.
     usuarioid = models.ForeignKey('Usuarios', models.DO_NOTHING, db_column='UsuarioId')  # Field name made lowercase.
+
+    def save(self, *args, **kwargs):
+        # Si el objeto no tiene un código
+        if not self.codigo:
+            # Genera un código único de 8 caracteres en mayúsculas
+            self.codigo = uuid.uuid4().hex[:8].upper()
+        # Llama al método de guardado
+        super().save(*args, **kwargs)
 
     class Meta:
         managed = False
@@ -142,17 +150,90 @@ class Unidadesmedida(models.Model):
         managed = False
         db_table = 'UnidadesMedida'
 
+# EN gestion/models.py
 
-class Usuarios(models.Model):
-    id = models.AutoField(db_column='Id', primary_key=True)  # Field name made lowercase.
-    codigo = models.CharField(db_column='Codigo', unique=True, max_length=8, db_collation='Modern_Spanish_CI_AS')  # Field name made lowercase.
-    nombre = models.CharField(db_column='Nombre', max_length=40, db_collation='Modern_Spanish_CI_AS')  # Field name made lowercase.
-    apellido = models.CharField(db_column='Apellido', max_length=50, db_collation='Modern_Spanish_CI_AS')  # Field name made lowercase.
-    ussername = models.CharField(db_column='UsserName', unique=True, max_length=20, db_collation='Modern_Spanish_CI_AS')  # Field name made lowercase.
-    correo = models.CharField(db_column='Correo', max_length=30, db_collation='Modern_Spanish_CI_AS')  # Field name made lowercase.
-    contraseña = models.CharField(db_column='Contraseña', max_length=50, db_collation='Modern_Spanish_CI_AS')  # Field name made lowercase.
-    estado = models.BooleanField(db_column='Estado')  # Field name made lowercase.
-    rolid = models.ForeignKey(Roles, models.DO_NOTHING, db_column='RolId')  # Field name made lowercase.
+# EN gestion/models.py
+
+class CustomUserManager(BaseUserManager):
+    """
+    Manager personalizado para nuestro modelo de usuario con ussername como identificador.
+    """
+    def create_user(self, ussername, email, password=None, **extra_fields):
+        if not ussername:
+            raise ValueError('El campo Ussername es obligatorio')
+        email = self.normalize_email(email)
+        user = self.model(ussername=ussername, email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, ussername, email, password=None, **extra_fields):
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('is_active', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        # --- LÓGICA AÑADIDA PARA ASIGNAR EL ROL ---
+        try:
+            # Busca el rol de Administrador en la tabla Roles
+            admin_role = Roles.objects.get(rol='Administrador')
+            # Lo añade a los campos que se van a guardar
+            extra_fields['rolid'] = admin_role
+        except Roles.DoesNotExist:
+            raise ValueError(
+                "El rol 'Administrador' no existe en la base de datos. "
+                "Por favor, créalo antes de crear un superusuario."
+            )
+        # -------------------------------------------
+
+        return self.create_user(ussername, email, password, **extra_fields)
+
+
+class Usuarios(AbstractUser):
+    # 1. Desactivamos el 'username' por defecto de AbstractUser
+    username = None
+
+    # 2. Definimos tus campos, asegurándonos de que coincidan con la base de datos
+    #    y le decimos a AbstractUser cuáles usar.
+    id = models.AutoField(db_column='Id', primary_key=True)
+    codigo = models.CharField(db_column='Codigo', unique=True, max_length=8, db_collation='Modern_Spanish_CI_AS')
+
+    # Mapeamos los campos de AbstractUser a tus columnas de la BD
+    first_name = models.CharField(db_column='Nombre', max_length=40, db_collation='Modern_Spanish_CI_AS')
+    last_name = models.CharField(db_column='Apellido', max_length=50, db_collation='Modern_Spanish_CI_AS')
+    ussername = models.CharField(db_column='UsserName', unique=True, max_length=20, db_collation='Modern_Spanish_CI_AS')
+    email = models.CharField(db_column='Correo', max_length=30, db_collation='Modern_Spanish_CI_AS')
+
+    # El campo 'contraseña' de tu BD ya no será usado por el sistema de auth seguro de Django.
+    # Django usará su propio campo 'password' internamente. Lo dejamos aquí para que el modelo no dé error,
+    # pero no lo usaremos para el login.
+    contraseña = models.CharField(db_column='Contraseña', max_length=50, db_collation='Modern_Spanish_CI_AS')
+
+    # Mapeamos 'estado' a 'is_active' de AbstractUser
+    is_active = models.BooleanField(db_column='Estado', default=True)
+
+    # Tu campo de relación
+    rolid = models.ForeignKey(Roles, models.DO_NOTHING, db_column='RolId')
+
+    # 3. Le decimos al sistema de autenticación cuál es el campo de login
+    USERNAME_FIELD = 'ussername'
+
+    # 4. Campos requeridos al usar 'createsuperuser'
+    REQUIRED_FIELDS = ['first_name', 'last_name', 'email']
+
+    objects = CustomUserManager()
+
+
+    class Meta:
+        managed = False
+        db_table = 'Usuarios'
+
+    def __str__(self):
+        return self.ussername
 
     class Meta:
         managed = False
