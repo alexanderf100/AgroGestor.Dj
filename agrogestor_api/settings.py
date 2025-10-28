@@ -92,7 +92,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'mssql',
         'NAME': 'AgroGestor',
-        'HOST': 'DESKTOP-LIT0GBE\\SQLEXPRESS',
+        'HOST': 'localhost',
         'PORT': '1433',
         'OPTIONS': {
             'driver': 'ODBC Driver 17 for SQL Server',
