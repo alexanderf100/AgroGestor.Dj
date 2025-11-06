@@ -5,7 +5,6 @@ from django.db.models import Sum, F, DecimalField, Value
 from django.db.models.functions import Coalesce # Para manejar nulos en sumas
 from django.shortcuts import get_object_or_404 # Para obtener objetos fácil
 
-# Importa TODOS los modelos y serializers
 from .models import (
     Usuarios, Roles, Categoriainsumos, Unidadesmedida, Cultivos,
     Insumos, Mantenimientocultivos, Detalleinsumosusados, Suelos,
@@ -18,7 +17,7 @@ from .serializers import (
     MantenimientocultivosSerializer, DetalleinsumosusadosSerializer,
     SuelosSerializer, MonitoreosuelosSerializer, SuelosCultivosSerializer,
     CosechasSerializer, IngresosSerializer, CostosCosechaSerializer, # Nuevos
-    MyTokenObtainPairSerializer # Para la vista de login
+    MyTokenObtainPairSerializer
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 
@@ -31,22 +30,19 @@ class SoftDeleteViewSetMixin:
     permission_classes = [permissions.IsAuthenticated] # Asegura protección por defecto
 
     def get_queryset(self):
-        # Filtra para mostrar solo los activos por defecto
-        # Usa 'self.model' si está definido, o el queryset base
         model = getattr(self, 'model', self.queryset.model)
         return model.objects.filter(estado=True)
 
     def perform_destroy(self, instance):
-        # Sobrescribe perform_destroy en lugar de destroy para usar la lógica de DRF
         instance.estado = False
         instance.save()
 
 
 
 class UsuarioViewSet(SoftDeleteViewSetMixin, viewsets.ModelViewSet): # Hereda del Mixin
-    queryset = Usuarios.objects.all().order_by('id') # Queryset base sin filtro de estado
+    queryset = Usuarios.objects.all().order_by('id')
     serializer_class = UsuariosSerializer
-    model = Usuarios # Añadido para el Mixin
+    model = Usuarios 
 
 class RoleViewSet(SoftDeleteViewSetMixin, viewsets.ModelViewSet):
     queryset = Roles.objects.all().order_by('id')
@@ -154,7 +150,7 @@ class CosechasViewSet(SoftDeleteViewSetMixin, viewsets.ModelViewSet):
             'fecha_cosecha': cosecha.fechacosecha.strftime('%Y-%m-%d %H:%M') if cosecha.fechacosecha else None, # Formatear fecha
             'ingresos_totales': float(ingresos_totales), # Convertir Decimal a float para JSON
             'costos_totales': float(costos_totales),
-            'costos_desglose': { # Mejor desglose
+            'costos_desglose': {
                 'directos_cosecha': float(costos_directos_cosecha),
                 'mantenimiento_mano_obra': float(costos_mantenimiento),
                 'insumos_utilizados': float(costos_insumos),
