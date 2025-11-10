@@ -1,3 +1,4 @@
+import uuid
 
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.db import models
@@ -13,7 +14,6 @@ class CustomUserManager(BaseUserManager):
         # Asegura que rolid tenga un valor antes de crear el user instance
         rol_id_instance = extra_fields.pop('rolid', None) # Extrae rolid si existe
         if not rol_id_instance:
-             # Intenta buscar un rol por defecto o lanza error si no se proporciona
              try:
                  # Asigna un rol por defecto si existe (ej. ID 2 = 'Agricultor')
                  default_role = Roles.objects.get(id=2) # Ajusta este ID según tu BD
@@ -21,7 +21,6 @@ class CustomUserManager(BaseUserManager):
              except Roles.DoesNotExist:
                  raise ValueError("Se requiere un 'rolid' para crear un usuario.")
 
-        # Asegúrate de pasar la instancia del Rol, no solo el ID, si el campo es ForeignKey
         user = self.model(ussername=ussername, email=email, rolid=rol_id_instance, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
@@ -76,7 +75,6 @@ class Usuarios(AbstractUser):
     last_name = models.CharField(db_column='Apellido', max_length=50, db_collation='Modern_Spanish_CI_AS')
     ussername = models.CharField(db_column='UsserName', unique=True, max_length=20, db_collation='Modern_Spanish_CI_AS') # Este es nuestro USERNAME_FIELD
     email = models.EmailField(db_column='Correo', max_length=254) # Usar EmailField para validación
-    # contraseña = models.CharField(db_column='Contraseña', max_length=50, db_collation='Modern_Spanish_CI_AS') # Ya no se usa para auth
     is_active = models.BooleanField(db_column='Estado', default=True) # Mapeado a 'Estado'
     rolid = models.ForeignKey(Roles, models.DO_NOTHING, db_column='RolId') # Relación con Roles
 
@@ -144,10 +142,8 @@ class Insumos(models.Model):
     fechacaducidad = models.DateTimeField(db_column='FechaCaducidad', blank=True, null=True) # Permitir null si no aplica
     estado = models.BooleanField(db_column='Estado')
     categoriainsumoid = models.ForeignKey(Categoriainsumos, models.DO_NOTHING, db_column='CategoriaInsumoId')
-    # --- CORREGIDO NOMBRE DE CAMPO Y COLUMNA ---
     unidadesmedidaid = models.ForeignKey(Unidadesmedida, models.DO_NOTHING, db_column='UnidadesMedidaId')
-    # ----------------------------------------
-    # NUEVO CAMPO:
+
     preciounitario = models.DecimalField(db_column='PrecioUnitario', max_digits=10, decimal_places=2, default=0)
 
     class Meta:
@@ -171,8 +167,6 @@ class Mantenimientocultivos(models.Model):
 
 class Detalleinsumosusados(models.Model):
     id = models.AutoField(db_column='Id', primary_key=True)
-    # Codigo parece ser redundante si ID es PK, y unique=True causó problemas
-    # codigo = models.CharField(db_column='Codigo', unique=True, max_length=8, db_collation='Modern_Spanish_CI_AS')
     cantidadusada = models.DecimalField(db_column='CantidadUsada', max_digits=10, decimal_places=2)
     estado = models.BooleanField(db_column='Estado')
     insumosid = models.ForeignKey('Insumos', models.DO_NOTHING, db_column='InsumosId') # Considerar si debe ser CASCADE o SET_NULL
@@ -212,8 +206,6 @@ class Monitoreosuelos(models.Model):
 
 class Suelos_Cultivos(models.Model):
     id = models.AutoField(db_column='Id', primary_key=True)
-    # Codigo parece ser redundante si ID es PK, y unique=True causó problemas
-    # codigo = models.CharField(db_column='Codigo', unique=True, max_length=8, db_collation='Modern_Spanish_CI_AS')
     suelosid = models.ForeignKey(Suelos, models.CASCADE, db_column='SuelosId', blank=True, null=True) # CASCADE si al borrar suelo se borra relación
     estado = models.BooleanField(db_column='Estado')
     cultivosid = models.ForeignKey(Cultivos, models.CASCADE, db_column='CultivosId', blank=True, null=True) # CASCADE si al borrar cultivo se borra relación
