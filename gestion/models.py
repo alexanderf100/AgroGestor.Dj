@@ -60,7 +60,6 @@ class Roles(models.Model):
     estado = models.BooleanField(db_column='Estado')
 
     class Meta:
-        managed = False
         db_table = 'Roles'
 
     def __str__(self):
@@ -76,7 +75,6 @@ class Usuarios(AbstractUser):
     last_name = models.CharField(db_column='Apellido', max_length=50, db_collation='Modern_Spanish_CI_AS')
     ussername = models.CharField(db_column='UsserName', unique=True, max_length=20, db_collation='Modern_Spanish_CI_AS') # Este es nuestro USERNAME_FIELD
     email = models.EmailField(db_column='Correo', max_length=254) # Usar EmailField para validación
-    # contraseña = models.CharField(db_column='Contraseña', max_length=50, db_collation='Modern_Spanish_CI_AS') # Ya no se usa para auth
     is_active = models.BooleanField(db_column='Estado', default=True) # Mapeado a 'Estado'
     rolid = models.ForeignKey(Roles, models.DO_NOTHING, db_column='RolId') # Relación con Roles
 
@@ -88,7 +86,6 @@ class Usuarios(AbstractUser):
     objects = CustomUserManager() # Usamos nuestro manager
 
     class Meta:
-        managed = False # Seguimos sin gestionar la tabla directamente
         db_table = 'Usuarios'
 
     def __str__(self):
@@ -102,7 +99,6 @@ class Categoriainsumos(models.Model):
     categoriainsumo = models.CharField(db_column='CategoriaInsumo', max_length=50, db_collation='Modern_Spanish_CI_AS')
 
     class Meta:
-        managed = False
         db_table = 'CategoriaInsumos'
 
 class Unidadesmedida(models.Model):
@@ -113,7 +109,6 @@ class Unidadesmedida(models.Model):
     abreviatura = models.CharField(db_column='Abreviatura', max_length=4, db_collation='Modern_Spanish_CI_AS')
 
     class Meta:
-        managed = False
         db_table = 'UnidadesMedida'
 
 class Cultivos(models.Model):
@@ -133,7 +128,6 @@ class Cultivos(models.Model):
         super().save(*args, **kwargs) # Llama al método save original
 
     class Meta:
-        managed = False
         db_table = 'Cultivos'
 
 class Insumos(models.Model):
@@ -151,7 +145,6 @@ class Insumos(models.Model):
     preciounitario = models.DecimalField(db_column='PrecioUnitario', max_digits=10, decimal_places=2, default=0)
 
     class Meta:
-        managed = False
         db_table = 'Insumos'
 
 class Mantenimientocultivos(models.Model):
@@ -166,7 +159,6 @@ class Mantenimientocultivos(models.Model):
     costomanoobra = models.DecimalField(db_column='CostoManoObra', max_digits=10, decimal_places=2, default=0)
 
     class Meta:
-        managed = False
         db_table = 'MantenimientoCultivos'
 
 class Detalleinsumosusados(models.Model):
@@ -179,7 +171,6 @@ class Detalleinsumosusados(models.Model):
     mantenimientocultivosid = models.ForeignKey('Mantenimientocultivos', models.CASCADE, db_column='MantenimientoCultivosId') # CASCADE tiene sentido aquí
 
     class Meta:
-        managed = False
         db_table = 'DetalleInsumosUsados'
 
 
@@ -192,7 +183,6 @@ class Suelos(models.Model):
     usuarioid = models.ForeignKey('Usuarios', models.DO_NOTHING, db_column='UsuarioId')
 
     class Meta:
-        managed = False
         db_table = 'Suelos'
 
 class Monitoreosuelos(models.Model):
@@ -206,7 +196,6 @@ class Monitoreosuelos(models.Model):
     suelosid = models.ForeignKey('Suelos', models.DO_NOTHING, db_column='SuelosId', blank=True, null=True) # O CASCADE?
 
     class Meta:
-        managed = False
         db_table = 'MonitoreoSuelos'
 
 
@@ -219,7 +208,6 @@ class Suelos_Cultivos(models.Model):
     cultivosid = models.ForeignKey(Cultivos, models.CASCADE, db_column='CultivosId', blank=True, null=True) # CASCADE si al borrar cultivo se borra relación
 
     class Meta:
-        managed = False
         db_table = 'Suelos_Cultivos'
 
 
@@ -236,7 +224,6 @@ class Cosechas(models.Model):
     estado = models.BooleanField(db_column='Estado', default=True) # Para borrado lógico
 
     class Meta:
-        managed = False
         db_table = 'Cosechas'
 
 class Ingresos(models.Model):
@@ -248,7 +235,6 @@ class Ingresos(models.Model):
     estado = models.BooleanField(db_column='Estado', default=True) # Para borrado lógico
 
     class Meta:
-        managed = False
         db_table = 'Ingresos'
 
 class CostosCosecha(models.Model):
@@ -261,7 +247,6 @@ class CostosCosecha(models.Model):
     estado = models.BooleanField(db_column='Estado', default=True) # Para borrado lógico
 
     class Meta:
-        managed = False
         db_table = 'CostosCosecha'
 
 

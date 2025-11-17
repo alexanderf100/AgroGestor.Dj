@@ -27,26 +27,34 @@ class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
 class SoftDeleteViewSetMixin:
-
-    permission_classes = [permissions.IsAuthenticated] # Asegura protección por defecto
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         # Filtra para mostrar solo los activos por defecto
-        # Usa 'self.model' si está definido, o el queryset base
         model = getattr(self, 'model', self.queryset.model)
+
+        # ¡CAMBIO AQUÍ!
+        # Debe ser 'estado=True' para ser consistente con 'perform_destroy'
         return model.objects.filter(estado=True)
 
     def perform_destroy(self, instance):
-        # Sobrescribe perform_destroy en lugar de destroy para usar la lógica de DRF
+        # Esto ya estaba correcto
         instance.estado = False
         instance.save()
 
 
 
-class UsuarioViewSet(SoftDeleteViewSetMixin, viewsets.ModelViewSet): # Hereda del Mixin
-    queryset = Usuarios.objects.all().order_by('id') # Queryset base sin filtro de estado
+class UsuarioViewSet(SoftDeleteViewSetMixin, viewsets.ModelViewSet):
+    queryset = Usuarios.objects.all().order_by('id')
     serializer_class = UsuariosSerializer
-    model = Usuarios # Añadido para el Mixin
+    model = Usuarios
+    def get_queryset(self):
+        # Esta vista usará 'is_active' en lugar de 'estado'
+        return self.model.objects.filter(is_active=True)
+    def perform_destroy(self, instance):
+        # El soft-delete de Usuario es con 'is_active'
+        instance.is_active = False
+        instance.save()
 
 class RoleViewSet(SoftDeleteViewSetMixin, viewsets.ModelViewSet):
     queryset = Roles.objects.all().order_by('id')
